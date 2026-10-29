@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentinel Security Console</title>
+<style>
+:root{--bg:#eef1f4;--panel:#fff;--ink:#14202b;--mute:#5b6b7a;--line:#d7dee5;--brand:#0f4c5c;--safe:#1f7a4d;--safe-bg:#e4f4ea;--warn:#a86400;--warn-bg:#fff1d6;--bad:#b42318;--bad-bg:#fde6e3}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1519;--panel:#182127;--ink:#e6edf2;--mute:#93a4b3;--line:#2a3943;--brand:#5fb3c7;--safe:#59c58b;--safe-bg:#12301f;--warn:#f0b24a;--warn-bg:#3a2a0c;--bad:#ff8a7d;--bad-bg:#3d1713}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif;display:grid;grid-template-columns:210px 1fr;min-height:100vh}
+aside{background:#0f4c5c;color:#fff;padding:22px 14px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+aside h1{font:700 22px/1.2 Georgia,serif;margin:0 0 2px 8px}aside p{margin:0 0 18px 8px;font-size:12px;opacity:.75}
+.nav{background:none;border:0;color:#fff;text-align:left;padding:10px 12px;border-radius:8px;font:inherit;cursor:pointer;opacity:.8}
+.nav:hover,.nav.on{background:rgba(255,255,255,.16);opacity:1}
+:focus-visible{outline:3px solid #f0b24a;outline-offset:2px}
+.spacer{flex:1}.voice{display:flex;gap:8px;align-items:center;font-size:13px;padding:8px 12px}
+main{padding:24px 28px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h2{font:700 26px/1.2 Georgia,serif;margin:0}.sub{color:var(--mute);margin:2px 0 0}
+section{display:none}section.on{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:15px}
+.grid{display:grid;gap:14px}.g4{grid-template-columns:1.2fr repeat(4,1fr)}.g3{grid-template-columns:2fr 1fr 1fr}.g2{grid-template-columns:3fr 2fr}.g22{grid-template-columns:1fr 1fr}
+.grid>.card{margin:0}
+.kpi b{font:700 32px/1.1 Georgia,serif;display:block}.kpi span{color:var(--mute);font-size:13px}.kpi.bad b{color:var(--bad)}.kpi.good b{color:var(--safe)}
+.ring{display:flex;align-items:center;gap:14px}.ring svg{width:84px;height:84px;transform:rotate(-90deg);flex:none}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+input[type=text]{flex:1;min-width:200px;padding:11px 14px;border:1px solid var(--line);border-radius:8px;font:inherit;background:var(--bg);color:var(--ink)}
+.btn{background:#0f4c5c;color:#fff;border:0;border-radius:8px;padding:10px 18px;font:inherit;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}.btn.ghost{background:none;color:var(--brand);border:1px solid var(--brand)}.btn.sm{padding:5px 12px;font-size:13px}.btn.red{background:var(--bad);color:#fff}
+.drop{display:block;border:2px dashed var(--line);border-radius:10px;padding:44px 20px;text-align:center;color:var(--mute);cursor:pointer}.drop.over{border-color:var(--brand);background:var(--bg)}
+.verdict{display:none;border-left:8px solid var(--line);margin-top:14px}
+.verdict.safe{border-color:var(--safe);background:var(--safe-bg)}.verdict.suspicious{border-color:var(--warn);background:var(--warn-bg)}.verdict.malicious,.verdict.blocked{border-color:var(--bad);background:var(--bad-bg)}.verdict.invalid{border-color:var(--mute);background:var(--bg)}.invalid .vword{color:var(--mute)}.invalid .gauge{color:var(--mute)}.tag.invalid{background:var(--line);color:var(--mute)}
+.vhead{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.vword{font:700 30px/1 Georgia,serif;text-transform:capitalize}.safe .vword{color:var(--safe)}.suspicious .vword{color:var(--warn)}.malicious .vword,.blocked .vword{color:var(--bad)}
+.gauge{height:10px;background:var(--line);border-radius:5px;margin:12px 0;overflow:hidden}.gauge i{display:block;height:100%;background:currentColor;transition:width .6s}
+.safe .gauge{color:var(--safe)}.suspicious .gauge{color:var(--warn)}.malicious .gauge{color:var(--bad)}
+.target{word-break:break-all;color:var(--mute);font-size:13px}ul.why{margin:8px 0 0;padding-left:20px}
+canvas{width:100%;height:170px;display:block}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);font-size:14px;vertical-align:top}th{color:var(--mute);font-weight:600}
+.tag{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.tag.safe{background:var(--safe-bg);color:var(--safe)}.tag.suspicious{background:var(--warn-bg);color:var(--warn)}.tag.malicious,.tag.blocked{background:var(--bad-bg);color:var(--bad)}.tag.demo{background:var(--line);color:var(--mute)}
+.empty{color:var(--mute);text-align:center;padding:18px}
+.bar{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}.bar span:first-child{width:90px;text-transform:capitalize}.bar i{display:block;height:10px;border-radius:5px;background:var(--brand)}.bar em{font-style:normal;color:var(--mute)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--mute);margin-top:6px}.legend b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--mute);margin-right:8px}.dot.on{background:var(--safe)}.dot.err{background:var(--bad)}
+.feed{max-height:330px;overflow:auto}.feed .it{display:flex;gap:10px;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+ol.setup{padding-left:20px;margin:8px 0}code{background:var(--bg);padding:1px 6px;border-radius:4px;font-size:13px}
+@media(max-width:1100px){.g4,.g3,.g2{grid-template-columns:1fr 1fr}}
+@media(max-width:760px){body{grid-template-columns:1fr}aside{position:static;height:auto;flex-direction:row;flex-wrap:wrap}aside p,.spacer{display:none}main{padding:14px}.g4,.g3,.g2,.g22{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<aside>
+  <h1>Sentinel</h1><p>Phishing, file and DDoS protection</p>
+  <button class="nav on" data-tab="dashboard">Dashboard</button>
+  <button class="nav" data-tab="url">Check a link</button>
+  <button class="nav" data-tab="file">Scan a file</button>
+  <button class="nav" data-tab="integrations">Gmail &amp; WhatsApp</button>
+  <button class="nav" data-tab="fw">Firewall</button>
+  <button class="nav" data-tab="log">Activity</button>
+  <div class="spacer"></div>
+  <label class="voice"><input type="checkbox" id="voice" checked> Speak results</label>
+</aside>
+<main>
+
+<section id="dashboard" class="on">
+  <div class="top"><div><h2>Security dashboard</h2><p class="sub">Live view of links, files, email and network traffic.</p></div>
+    <div class="row"><button class="btn ghost sm" id="demoBtn">Load sample data</button><a class="btn ghost sm" href="/api/report.pdf" style="text-decoration:none">PDF report</a><a class="btn ghost sm" href="/api/export.csv" style="text-decoration:none">CSV</a><button class="btn ghost sm" id="clearBtn">Clear</button></div></div>
+  <div class="grid g4" style="margin-bottom:14px">
+    <div class="card"><div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="12"/><circle id="scoreArc" cx="50" cy="50" r="40" fill="none" stroke="var(--safe)" stroke-width="12" stroke-dasharray="0 251.3" stroke-linecap="round"/></svg><div><b id="score" style="font:700 32px Georgia,serif">100</b><br><span class="target">Security score</span></div></div></div>
+    <div class="card kpi"><b id="kTotal">0</b><span>Items checked</span></div>
+    <div class="card kpi bad"><b id="kThreat">0</b><span>Threats found</span></div>
+    <div class="card kpi good"><b id="kBlock">0</b><span>Attacker IPs blocked</span></div>
+    <div class="card kpi"><b id="kMail" style="font-size:20px;padding:6px 0">Not connected</b><span>Gmail</span></div>
+  </div>
+  <div class="card"><h3>Quick scan</h3><div class="row"><input type="text" id="qIn" placeholder="Paste a link, or drop a file with the button" aria-label="Quick scan"><button class="btn" id="qBtn">Check link</button><label class="btn ghost" style="cursor:pointer">Scan file<input type="file" id="qFile" hidden></label></div><div class="card verdict" id="qOut"></div></div>
+  <div class="grid g3" style="margin-bottom:14px">
+    <div class="card"><h3>Activity, last hour</h3><canvas id="tl"></canvas><div class="legend"><span><b style="background:var(--brand)"></b>All checks</span><span><b style="background:var(--bad)"></b>Threats</span></div></div>
+    <div class="card"><h3>Verdicts</h3><div class="ring" style="flex-direction:column"><svg id="donut" viewBox="0 0 100 100" style="width:130px;height:130px"></svg><div class="legend" id="dLeg"></div></div></div>
+    <div class="card"><h3>Where it came from</h3><div id="srcBars"></div></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Latest threats</h3><div class="feed" id="feed"></div></div>
+    <div class="card"><h3>Top warning signs</h3><div id="reasons"></div><h3 style="margin-top:18px">Connections</h3><div id="conn"></div></div>
+  </div>
+</section>
+
+<section id="url">
+  <div class="top"><div><h2>Check a link</h2><p class="sub">Paste any link from an email, SMS or chat before you open it.</p></div></div>
+  <div class="card"><div class="row"><input type="text" id="urlIn" placeholder="https://example.com/login" aria-label="URL to check"><button class="btn" id="urlBtn">Check link</button><label class="btn ghost" style="cursor:pointer">Scan QR image<input type="file" id="qrIn" accept="image/*" hidden></label></div><label class="target" style="display:block;margin-top:10px"><input type="checkbox" id="deep"> Deep scan: domain age, SSL certificate and redirects (slower)</label></div>
+  <div class="card verdict" id="urlOut"></div>
+</section>
+
+<section id="file">
+  <div class="top"><div><h2>Scan a file</h2><p class="sub">Files are analysed in memory and never opened.</p></div></div>
+  <div class="card"><label class="drop" id="drop" for="fileIn">Drop a file here or click to choose<input type="file" id="fileIn" hidden></label></div>
+  <div class="card verdict" id="fileOut"></div>
+</section>
+
+<section id="integrations">
+  <div class="top"><div><h2>Gmail &amp; WhatsApp</h2><p class="sub">Connect your accounts so new links and attachments are checked automatically.</p></div></div>
+  <div class="grid g22">
+    <div class="card"><h3><span class="dot" id="gDot"></span>Gmail</h3><p id="gText" class="target"></p><div class="row" id="gBtns"></div><div id="gSetup"></div></div>
+    <div class="card"><h3><span class="dot" id="wDot"></span>WhatsApp Business</h3><p id="wText" class="target"></p>
+      <ol class="setup"><li>Create a Meta developer app with WhatsApp Cloud API.</li><li>Set environment variables <code>WA_VERIFY_TOKEN</code> and <code>WA_ACCESS_TOKEN</code>, then restart.</li><li>Expose this app with a public HTTPS URL (for example ngrok).</li><li>Set the webhook to <code id="wHook"></code></li></ol>
+      <p class="target">Only messages sent to your business number can be scanned. Personal WhatsApp chats are not accessible.</p></div>
+  </div>
+  <div class="card" style="margin-top:14px;display:none"><h3>Detection engines and alerts</h3><div id="eng"></div>
+    <div class="row" style="margin-top:12px;align-items:center"><button class="btn ghost sm" id="alertTest">Send test alert</button><span class="target" id="alertRes"></span></div></div>
+</section>
+
+<section id="fw">
+  <div class="top"><div><h2>Firewall</h2><p class="sub">Requests per second, with automatic blocking of flooding IP addresses.</p></div><button class="btn ghost sm" id="simBtn">Run attack test</button></div>
+  <div class="grid g3" style="margin-bottom:14px;grid-template-columns:repeat(3,1fr)"><div class="card kpi"><b id="sBlocked">0</b><span>IPs blocked now</span></div><div class="card kpi"><b id="sTotal">0</b><span>Total blocks</span></div><div class="card kpi"><b id="sRule">-</b><span>Block rule</span></div></div>
+  <div class="card"><canvas id="chart"></canvas></div>
+  <div class="card"><h3>Detection layers</h3><div id="layers"></div></div>
+  <div class="card"><h3>Blocked addresses</h3><div id="blockedList"></div><p class="target">The attack test sends simulated traffic to the detector only. No real packets are generated.</p></div>
+</section>
+
+<section id="log">
+  <div class="top"><div><h2>Activity</h2><p class="sub">Everything Sentinel has checked.</p></div><a class="btn ghost sm" href="/api/export.csv" style="text-decoration:none">Export report</a></div>
+  <div class="card" id="logList"></div>
+</section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const css=n=>getComputedStyle(document.body).getPropertyValue(n);
+function show(tab){document.querySelectorAll(".nav,section").forEach(e=>e.classList.remove("on"));
+  document.querySelector(`[data-tab=${tab}]`).classList.add("on");$("#"+tab).classList.add("on");poll();}
+document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>show(b.dataset.tab));
+if(location.hash==="#integrations")show("integrations");
+
+function speak(t){if(!$("#voice").checked||!window.speechSynthesis)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang="en-US";speechSynthesis.speak(u);}
+function sentence(r){const w={url:"link",file:"file",email:"email",firewall:"traffic"}[r.type]||"item";
+  if(r.verdict==="invalid")return `This ${w} is not valid. Please check the address.`;
+  if(r.verdict==="safe")return `This ${w} is safe.`;
+  if(r.verdict==="suspicious")return `Warning! This ${w} is suspicious.`;
+  if(r.verdict==="blocked")return `Alert! Attack detected. IP address ${r.target} has been blocked.`;
+  return `Danger! This ${w} is malicious. Do not open it.`;}
+function render(el,r){el.className="card verdict "+r.verdict;el.style.display="block";
+  const extra=r.sha256?`<div class="target">${esc(r.target)} &middot; ${(r.size/1024).toFixed(1)} KB &middot; detected as ${esc(r.detected_type)}<br>SHA-256 ${r.sha256}</div>`:`<div class="target">${esc(r.target)}</div>`;
+  el.innerHTML=`<div class="vhead"><span class="vword">${r.verdict}</span><strong>Risk score ${r.score}/100</strong></div><div class="gauge"><i style="width:${r.score}%"></i></div>${extra}${r.details?`<div class="target" style="margin-top:6px">${Object.entries(r.details).map(([k,v])=>`${k}: <b>${esc(v)}</b>`).join(" &middot; ")}</div>`:""}<ul class="why">${r.reasons.map(x=>`<li>${esc(x.text)}</li>`).join("")}</ul>`;
+  speak(sentence(r));}
+async function post(url,opts){const res=await fetch(url,{method:"POST",...opts});const j=await res.json();if(!res.ok)throw new Error(j.error||"Request failed");return j;}
+const J={"Content-Type":"application/json"};
+const deepQ=out=>out.id==="urlOut"&&$("#deep").checked?"?deep=1":"";
+async function checkUrl(v,out){try{render(out,await post("/api/scan-url"+deepQ(out),{headers:J,body:JSON.stringify({url:v})}));poll(true);}catch(e){alert(e.message)}}
+async function sendFile(f,out){if(!f)return;const fd=new FormData();fd.append("file",f);try{render(out,await post("/api/scan-file",{body:fd}));poll(true);}catch(e){alert(e.message)}}
+$("#qrIn").onchange=async e=>{const f=e.target.files[0];if(!f)return;const fd=new FormData();fd.append("file",f);
+  try{render($("#urlOut"),await post("/api/scan-qr"+deepQ($("#urlOut")),{body:fd}));poll()}catch(err){alert(err.message)}e.target.value=""};
+$("#alertTest").onclick=async()=>{$("#alertRes").textContent="Sending...";try{$("#alertRes").textContent=(await post("/api/alerts/test")).result}catch(e){$("#alertRes").textContent=e.message}};
+$("#urlBtn").onclick=()=>checkUrl($("#urlIn").value,$("#urlOut"));$("#urlIn").onkeydown=e=>{if(e.key==="Enter")$("#urlBtn").click()};
+$("#qBtn").onclick=()=>checkUrl($("#qIn").value,$("#qOut"));$("#qIn").onkeydown=e=>{if(e.key==="Enter")$("#qBtn").click()};
+$("#qFile").onchange=e=>sendFile(e.target.files[0],$("#qOut"));$("#fileIn").onchange=e=>sendFile(e.target.files[0],$("#fileOut"));
+const drop=$("#drop");["dragover","dragenter"].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.add("over")}));
+["dragleave","drop"].forEach(n=>drop.addEventListener(n,e=>{e.preventDefault();drop.classList.remove("over")}));
+drop.addEventListener("drop",e=>sendFile(e.dataTransfer.files[0],$("#fileOut")));
+$("#demoBtn").onclick=async()=>{await post("/api/demo");poll(true)};
+$("#clearBtn").onclick=async()=>{await post("/api/clear");poll(true)};
+$("#simBtn").onclick=async()=>{await post("/api/firewall/simulate");poll(true)};
+async function unblock(ip){await post("/api/firewall/unblock",{headers:J,body:JSON.stringify({ip})});poll(true)}
+
+function arc(el,frac,color){el.setAttribute("stroke-dasharray",`${251.3*frac} 251.3`);if(color)el.setAttribute("stroke",color)}
+function bars(el,pairs){const m=Math.max(1,...pairs.map(p=>p[1]));el.innerHTML=pairs.length?pairs.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><i style="width:${v/m*55}%"></i><em>${v}</em></div>`).join(""):`<div class="empty">No data yet</div>`}
+function timeline(data){const c=$("#tl"),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*d;c.height=h*d;const g=c.getContext("2d");g.scale(d,d);
+  const m=Math.max(3,...data.map(b=>b.total)),bw=w/data.length;g.font="11px sans-serif";g.fillStyle=css("--mute");
+  data.forEach((b,i)=>{const x=i*bw+4,tw=bw-8,th=b.total/m*(h-20),hh=b.threats/m*(h-20);
+    g.fillStyle=css("--brand");g.fillRect(x,h-18-th,tw,th);g.fillStyle=css("--bad");g.fillRect(x,h-18-hh,tw,hh);
+    g.fillStyle=css("--mute");g.fillText(i===11?"now":`-${(11-i)*5}m`,x,h-4)});}
+function renderStats(s){
+  $("#score").textContent=s.score;arc($("#scoreArc"),s.score/100,s.score>70?css("--safe"):s.score>40?css("--warn"):css("--bad"));
+  $("#kTotal").textContent=s.total;$("#kThreat").textContent=s.threats;$("#kBlock").textContent=s.blocked_ips;
+  timeline(s.timeline);
+  const cols={safe:css("--safe"),suspicious:css("--warn"),malicious:css("--bad"),blocked:"#7a1f16",invalid:"#8a97a3"};let off=0;const tot=Math.max(s.total,1);
+  $("#donut").innerHTML=`<circle cx="50" cy="50" r="40" fill="none" stroke="var(--line)" stroke-width="14"/>`+Object.entries(s.verdicts).map(([k,v])=>{const l=v/tot*251.3,o=-off;off+=l;return `<circle cx="50" cy="50" r="40" fill="none" stroke="${cols[k]}" stroke-width="14" stroke-dasharray="${l} 251.3" stroke-dashoffset="${o}" transform="rotate(-90 50 50)"/>`}).join("");
+  $("#dLeg").innerHTML=Object.entries(s.verdicts).map(([k,v])=>`<span><b style="background:${cols[k]}"></b>${k} ${v}</span>`).join("")||"<span>No data yet</span>";
+  bars($("#srcBars"),Object.entries(s.sources));bars($("#reasons"),s.top_reasons);}
+function renderLog(ev){
+  const bad=ev.filter(e=>e.verdict!=="safe").slice(0,12);
+  $("#feed").innerHTML=bad.length?bad.map(e=>`<div class="it"><div><span class="tag ${e.verdict}">${e.verdict}</span> <span class="target">${e.time} &middot; ${esc(e.source)}</span><br><span class="target">${esc(e.target.slice(0,70))}</span></div><strong>${e.score}</strong></div>`).join(""):`<div class="empty">No threats yet. Load sample data or check a link to see results.</div>`;
+  $("#logList").innerHTML=ev.length?`<table><tr><th>Time</th><th>Source</th><th>Item</th><th>Result</th></tr>${ev.map(e=>`<tr><td>${e.time}</td><td>${esc(e.source)}${e.demo?' <span class="tag demo">sample</span>':""}</td><td class="target">${esc(e.target)}<br>${esc(e.reasons[0].text)}</td><td><span class="tag ${e.verdict}">${e.verdict}</span></td></tr>`).join("")}</table>`:`<div class="empty">Nothing checked yet.</div>`;}
+function renderInt(i){const g=i.gmail;
+  $("#gDot").className="dot "+(g.connected?(g.error?"err":"on"):"");
+  $("#kMail").textContent=g.connected?(g.email||"Connected"):"Not connected";$("#kMail").style.fontSize=g.connected?"14px":"20px";
+  $("#gText").textContent=g.connected?`Connected${g.email?" as "+g.email:""}. ${g.emails} emails scanned. Last scan ${g.last_scan||"pending"}.${g.error?" Error: "+g.error:""}`:"Not connected. Sentinel will check headers (SPF, DKIM, DMARC), links and attachments of your last 7 days of email. It only requests read-only access.";
+  $("#gBtns").innerHTML=g.connected?`<button class="btn sm" onclick="gScan(this)">Scan inbox now</button><button class="btn ghost sm" onclick="gOff()">Disconnect</button>`:(g.credentials&&g.libs?`<a class="btn" href="/gmail/connect" style="text-decoration:none">Connect Gmail</a>`:`<button class="btn" disabled>Connect Gmail</button>`);
+  $("#gSetup").innerHTML=g.connected||(g.credentials&&g.libs)?"":`<p><b>Setup needed</b></p><ol class="setup">${g.libs?"":"<li>Run <code>pip install google-api-python-client google-auth-oauthlib</code></li>"}${g.credentials?"":`<li>In Google Cloud Console, enable the Gmail API and create an OAuth client (type: Web application).</li><li>Add redirect URI <code>http://127.0.0.1:5000/gmail/callback</code> and add your address as a test user.</li><li>Download the JSON, rename it <code>credentials.json</code> and place it next to <code>app.py</code>.</li>`}<li>Restart the app and reload this page.</li></ol>`;
+  $("#wDot").className="dot "+(i.whatsapp.configured?"on":"");$("#wText").textContent=i.whatsapp.configured?"Access token found. Waiting for webhook messages.":"Not configured yet.";$("#wHook").textContent=i.whatsapp.webhook;
+  $("#conn").innerHTML=`<div class="bar"><span>Gmail</span><em>${g.connected?"connected":"not connected"}</em></div><div class="bar"><span>WhatsApp</span><em>${i.whatsapp.configured?"configured":"not configured"}</em></div><div class="bar"><span>Firewall</span><em>active</em></div>`;}
+async function gScan(b){b.textContent="Scanning...";await post("/api/gmail/scan");poll(true)}
+async function gOff(){await post("/api/gmail/disconnect");poll(true)}
+function fwDraw(data,limit,win){const c=$("#chart"),d=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*d;c.height=h*d;const g=c.getContext("2d");g.scale(d,d);
+  const max=Math.max(limit/win*1.5,...data,5),ly=h-(limit/win)/max*h;g.strokeStyle=css("--line");g.fillStyle=css("--mute");g.font="12px sans-serif";
+  g.setLineDash([5,4]);g.beginPath();g.moveTo(0,ly);g.lineTo(w,ly);g.stroke();g.setLineDash([]);g.fillText("block rule",6,ly-5);
+  g.strokeStyle=css("--brand");g.lineWidth=2;g.beginPath();data.forEach((v,i)=>{const x=i/Math.max(data.length-1,1)*w,y=h-v/max*h;i?g.lineTo(x,y):g.moveTo(x,y)});g.stroke();}
+function renderFw(s){$("#sBlocked").textContent=s.blocked.length;$("#sTotal").textContent=s.total_blocked;$("#sRule").textContent=`${s.limit}/${s.window}s`;
+  $("#blockedList").innerHTML=s.blocked.length?`<table><tr><th>IP address</th><th>Reason</th><th>Unblocks in</th><th></th></tr>${s.blocked.map(b=>`<tr><td>${esc(b.ip)}</td><td>${esc(b.reason)}</td><td>${b.seconds_left}s</td><td><button class="btn ghost sm" onclick="unblock('${esc(b.ip)}')">Unblock</button></td></tr>`).join("")}</table>`:`<div class="empty">No blocked addresses. Traffic looks normal.</div>`;
+  const L=(n,on,d)=>`<div class="bar"><span style="width:230px;text-transform:none"><span class="dot ${on?"on":""}"></span>${n}</span><em>${d}</em></div>`;
+  $("#layers").innerHTML=L("Request rate limit",true,`${s.limit} requests per ${s.window}s per IP`)+L("Anomaly detection (Isolation Forest)",s.anomaly.trained,s.anomaly.trained?"Learned normal traffic":`Learning normal traffic (${s.anomaly.samples}/60 samples)`)+L("Packet sniffer (SYN, UDP, port scan)",s.sniffer.running,s.sniffer.running?`${s.sniffer.packets} packets seen`:(s.sniffer.error||"Off. Start as administrator with SNIFF=1"));
+  fwDraw(s.timeline,s.limit,s.window);}
+function renderEng(e){$("#eng").innerHTML=e.map(x=>`<div class="bar"><span style="width:290px;text-transform:none"><span class="dot ${x.on?"on":""}"></span>${esc(x.name)}</span><em>${esc(x.detail)}</em></div>`).join("")}
+let lastKey=null,first=true;
+async function poll(){
+  const [ev,st,fw,it,en]=await Promise.all(["events","stats","firewall","integrations","engines"].map(u=>fetch("/api/"+u).then(r=>r.json())));
+  renderStats(st);renderLog(ev);renderFw(fw);renderInt(it);renderEng(en);
+  const f=ev.find(e=>e.source!=="manual"&&!e.demo);
+  if(f){const k=f.ts;if(!first&&k!==lastKey)speak((f.source==="firewall"?"":`New item from ${f.source}. `)+sentence(f));lastKey=k;}first=false;}
+poll();setInterval(poll,3000);
+</script>
+</body>
+</html>

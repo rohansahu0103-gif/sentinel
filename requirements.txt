@@ -1,0 +1,13 @@
+flask>=3.0
+requests>=2.31
+# Machine learning and anomaly detection
+scikit-learn
+joblib
+numpy
+# Optional features
+google-api-python-client
+google-auth-oauthlib
+python-whois
+opencv-python-headless
+scapy
+reportlab
